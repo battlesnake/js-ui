@@ -1,5 +1,4 @@
 var _ = require('lodash');
-var UiElement = require('./ui-element');
 var arithmetic = require('dslap').parsers.arithmetic;
 
 module.exports = {
@@ -61,6 +60,24 @@ window.addEventListener('keyup', receiveKey);
  *    events.
  */
 
+function hasParent(el, test) {
+	while (test) {
+		if (test === el.parentElement) {
+			return true;
+		}
+		test = test.parentElement;
+	}
+	return false;
+}
+
+function getLevel(el) {
+	var level = 0;
+	for (var element = el; element; element = element.parentElement) {
+		level++;
+	}
+	return level;
+}
+
 /*
  * Collect input that is directed to an element or to its children.
  *
@@ -75,23 +92,15 @@ window.addEventListener('keyup', receiveKey);
  *
  */
 function onKey(element, handler, filterExpression, directOnly) {
-	var i, level = UiElement.getLevel(element);
+	var i, level = getLevel(element);
 	for (i = 0; i < handlers.length; i++) {
-		var trial = handlers[i], trialLevel = UiElement.getLevel(trial.element);
+		var trial = handlers[i], trialLevel = getLevel(trial.element);
 		if (level > trialLevel ||
 			(level === trialLevel && (directOnly || !trial.directOnly))) {
 			break;
 		}
 	}
 	handlers.splice(i, 0, { element: element, callback: handler, filter: parseFilters(filterExpression), direct: directOnly });
-	return;
-
-	function filter() {
-		var args = arguments;
-		return _.all(filters, function (fn) {
-			return fn.apply(null, args);
-		});
-	}
 }
 
 function parseFilters(filterExpression) {
@@ -199,7 +208,7 @@ function dispatchEvent(data, event) {
 			invalidHandlers.push(i);
 		}
 		/* If element is or is parent of target, notify it */
-		if ((data.element === element || !direct && UiElement.hasParent(data.element, element)) && filter(data, event)) {
+		if ((data.element === element || !direct && hasParent(data.element, element)) && filter(data, event)) {
 			var action = callback ? callback(data, event) : 'consume';
 			if (action === 'consume') {
 				/* Stop processing, don't pass to browser */
@@ -287,7 +296,7 @@ function getCode(code, mappings) {
 	}
 }
 
-function demo() {
+window.startKeyboardDemo = function demo() {
 	var log = [];
 	onKey(document.body,
 		function (data) {
@@ -307,4 +316,4 @@ function demo() {
 		},
 		'!browser'
 	);
-}
+};
