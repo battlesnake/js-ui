@@ -237,7 +237,7 @@ function dispatchEvent(data, event) {
  * Keys with single-character names will always have the name part lowercased.
  */
 function keyCodeStr(event) {
-	var key = getKey(event.key, keyMappings);
+	var key = getKey(event.key, keyMappings) || event.keyIdentifier;
 	if (!key) {
 		return;
 	}
